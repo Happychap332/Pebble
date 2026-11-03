@@ -1,0 +1,11 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" role="img" aria-label="Pebble logo">
+  <title>Pebble</title>
+  <!-- A small cairn of three smooth pebbles: balance, one step at a time -->
+  <ellipse cx="32" cy="49" rx="21" ry="9.5" fill="#6E9E8E"/>
+  <ellipse cx="30.5" cy="34.5" rx="15" ry="7.5" fill="#A8A4CE"/>
+  <ellipse cx="33" cy="22.5" rx="9.5" ry="5.6" fill="#E9B98F"/>
+  <path d="M41 9.5c.4 2 1.4 3 3.4 3.4-2 .4-3 1.4-3.4 3.4-.4-2-1.4-3-3.4-3.4 2-.4 3-1.4 3.4-3.4z" fill="#E9B98F"/>
+  <ellipse cx="25" cy="46.5" rx="7" ry="2" fill="#fff" opacity=".18"/>
+  <ellipse cx="26" cy="32.5" rx="5" ry="1.6" fill="#fff" opacity=".22"/>
+  <ellipse cx="30.5" cy="21" rx="3" ry="1.1" fill="#fff" opacity=".3"/>
+</svg>

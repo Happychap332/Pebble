@@ -1,0 +1,11 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 300 80" role="img" aria-label="Pebble — plan calmly">
+  <title>Pebble — plan calmly</title>
+  <g transform="translate(6 8)">
+    <ellipse cx="32" cy="49" rx="21" ry="9.5" fill="#6E9E8E"/>
+    <ellipse cx="30.5" cy="34.5" rx="15" ry="7.5" fill="#A8A4CE"/>
+    <ellipse cx="33" cy="22.5" rx="9.5" ry="5.6" fill="#E9B98F"/>
+    <path d="M41 9.5c.4 2 1.4 3 3.4 3.4-2 .4-3 1.4-3.4 3.4-.4-2-1.4-3-3.4-3.4 2-.4 3-1.4 3.4-3.4z" fill="#E9B98F"/>
+  </g>
+  <text x="82" y="47" font-family="Fraunces, Georgia, serif" font-size="38" font-weight="600" fill="#26302D" letter-spacing="-0.5">Pebble</text>
+  <text x="84" y="66" font-family="'DM Sans', Arial, sans-serif" font-size="12.5" fill="#7A8580" letter-spacing="2.6">PLAN CALMLY</text>
+</svg>
