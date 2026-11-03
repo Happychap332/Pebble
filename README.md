@@ -23,12 +23,20 @@ It is just HTML, CSS and JavaScript. There is no server, no account and no build
   - An optional morning summary of the day
   - Per-item reminders, sent 15 minutes before the item
   - **Add to my phone's calendar (.ics)** exports upcoming items with alerts the evening before, so reminders still arrive when Pebble is closed
+- **Study hub**, with tools that usually come with paid study apps:
+  - **Smart revision planner**: pick an exam, your topics and when you can study, and Pebble builds a spaced-repetition timetable. Weakest topics get the most sessions, and sessions move from *Learn* to *Recall* to *Exam practice*, ending with a final review the day before. One click adds it to your calendar.
+  - **Topic tracker**: rate every topic red, amber or green and see how confident you are in each subject.
+  - **Notes**: simple formatting (`#` headings, `-` bullets, `**bold**`). Any `term :: definition` line becomes a flashcard in one click, and notes can be read aloud.
+  - **Blurt test**: write everything you remember about a note against a timer. Pebble then shows which key ideas you recalled and which you missed, highlights them in your note, and tracks your score over time.
+- **Flashcard games**: *Quiz me* (multiple choice and typed answers that tolerate small typos), a timed *Match game* with personal bests, and *Import*, where you paste from Quizlet, a spreadsheet or a plain list.
+- **Insights**: a study-activity heatmap, focus time by subject, the percentage of flashcards mastered, topics that need attention, blurt score trends and personal tips.
+- **Study next** on the Today page suggests what to do: due flashcards, your weakest topic and a note to test.
 - **Focus timer**: Pomodoro-style focus and break sessions with an animated ring and a gentle chime. You can play rain, waves or deep ambient sound, which is generated in the browser so it needs no audio files. Each finished session adds a pebble to the day's count.
 - **Flashcards**: decks with simple spaced repetition. Cards you know come back after 1, 3, 7, 14, 30 and then 60 days.
 - **Breathe**: guided breathing (Gentle 4-6, Box 4-4-4-4, and 4-7-8 for exam nerves).
 - **Settings**: your name, light/dark/auto theme, colour-coded subjects, and backup/restore to JSON.
 - Works offline and can be installed as an app on a phone or desktop.
-- Keyboard shortcuts: `N` adds a new item, `1`–`7` switch pages, `Space` starts the timer or flips a card, `Esc` closes windows.
+- Keyboard shortcuts: `N` adds a new item, `1`–`9` switch pages, `Space` starts the timer or flips a card, `Esc` closes windows.
 
 ## Put it on GitHub Pages
 
@@ -64,6 +72,8 @@ index.html             page structure
 css/style.css          all styling (light + dark)
 js/app.js              all app logic
 js/auth.js             login page + accounts
+js/learn.js            study hub, quiz, match, insights
+privacy.html           privacy page
 sw.js                  offline support + notification clicks
 manifest.webmanifest   lets it be installed as an app
 assets/                logo.svg, wordmark.svg, app icons
@@ -74,6 +84,6 @@ assets/                logo.svg, wordmark.svg, app icons
 - **Colours**: change the variables at the top of `css/style.css`: `--accent` (sage), `--lav` (lavender) and `--peach`.
 - **Encouraging lines**: edit the `THOUGHTS` list in `js/app.js`.
 - **Default subjects**: edit `DEFAULT_SUBJECTS` in `js/app.js`.
-- After changing files, bump `CACHE = 'pebble-v2'` in `sw.js` (to `v3` and so on) so returning visitors get the new version.
+- After changing files, bump `CACHE = 'pebble-v5'` in `sw.js` (to `v6` and so on) so returning visitors get the new version.
 
 Made by Happychap5005.

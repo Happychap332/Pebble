@@ -1,6 +1,6 @@
 /* Pebble service worker — makes the site work offline and lets it show notifications. */
-const CACHE = 'pebble-v2';
-const ASSETS = ['./', 'index.html', 'css/style.css', 'js/app.js', 'js/auth.js', 'assets/logo.svg', 'assets/icon-192.png', 'assets/icon-512.png', 'manifest.webmanifest'];
+const CACHE = 'pebble-v5';
+const ASSETS = ['./', 'index.html', 'css/style.css', 'js/app.js', 'js/auth.js', 'js/learn.js', 'privacy.html', 'assets/logo.svg', 'assets/icon-192.png', 'assets/icon-512.png', 'manifest.webmanifest'];
 
 self.addEventListener('install', e => {
   e.waitUntil(caches.open(CACHE).then(c => c.addAll(ASSETS)).then(() => self.skipWaiting()));

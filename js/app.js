@@ -64,6 +64,7 @@ const DEFAULT_SUBJECTS = [
 function defaultState() {
   return {
     items: [], subjects: DEFAULT_SUBJECTS.map(s => ({ ...s })), decks: [], focusLog: [], notified: {},
+    topics: [], notes: [], blurts: [], plans: [], reviewLog: {}, matchBest: {},
     firstRun: false,
     settings: {
       name: '', theme: 'auto',
@@ -94,6 +95,18 @@ function seed(s) {
       mkCard('Where in a plant cell does photosynthesis happen?', 'In the chloroplasts'),
       mkCard('What do red blood cells carry?', 'Oxygen, bound to haemoglobin'),
     ],
+  }];
+  s.topics = [
+    { id: uid(), subjectId: 's1', name: 'Algebra', conf: 2, updated: d(0) },
+    { id: uid(), subjectId: 's1', name: 'Trigonometry', conf: 1, updated: d(0) },
+    { id: uid(), subjectId: 's1', name: 'Statistics', conf: 3, updated: d(0) },
+    { id: uid(), subjectId: 's1', name: 'Graphs', conf: 2, updated: d(0) },
+    { id: uid(), subjectId: 's3', name: 'Cells', conf: 2, updated: d(0) },
+    { id: uid(), subjectId: 's3', name: 'Forces', conf: 1, updated: d(0) },
+  ];
+  s.notes = [{
+    id: uid(), title: 'Example: Photosynthesis', subjectId: 's3', created: Date.now(), updated: Date.now(),
+    body: '# Photosynthesis\nPlants make their own food (glucose) using light energy from the sun.\nIt happens in the **chloroplasts**, mostly in leaf cells.\n\n## Key words\nChlorophyll :: green pigment that absorbs light energy\nGlucose :: sugar made by photosynthesis, used for respiration\nStomata :: tiny pores in leaves that let carbon dioxide in\n\n## Equation\n- carbon dioxide + water → glucose + oxygen\n- Light intensity, temperature and carbon dioxide concentration are limiting factors.',
   }];
   s.firstRun = true;
   return s;
@@ -243,11 +256,12 @@ function bindQuickAdd(root, baseDate) {
 }
 
 /* ---------- router ---------- */
-const VIEWS = ['today', 'calendar', 'tasks', 'focus', 'cards', 'breathe', 'settings'];
+const VIEWS = ['today', 'calendar', 'tasks', 'study', 'cards', 'focus', 'insights', 'breathe', 'settings'];
 let view = 'today';
 function go(v) {
   if (!VIEWS.includes(v)) v = 'today';
   if (view === 'breathe' && v !== 'breathe') breatheStop();
+  if (typeof onLeaveView === 'function') onLeaveView(view, v);
   view = v;
   $$('.nav-btn').forEach(b => b.classList.toggle('active', b.dataset.view === v));
   $$('.view').forEach(s => { s.hidden = s.id !== 'view-' + v; });
@@ -256,7 +270,7 @@ function go(v) {
   window.scrollTo({ top: 0 });
 }
 function render() {
-  ({ today: renderToday, calendar: renderCalendar, tasks: renderTasks, focus: renderFocus, cards: renderCards, breathe: renderBreathe, settings: renderSettings })[view]();
+  ({ today: renderToday, calendar: renderCalendar, tasks: renderTasks, study: renderStudy, focus: renderFocus, cards: renderCards, insights: renderInsights, breathe: renderBreathe, settings: renderSettings })[view]();
 }
 
 /* =========================================================
@@ -360,6 +374,7 @@ function renderToday() {
   $('#bellBtn', el).onclick = () => go('settings');
   const dw = $('#dismissWelcome', el); if (dw) dw.onclick = () => { S.firstRun = false; save(); render(); };
   $$('[data-edit]', el).forEach(x => x.onclick = () => openEditor(getItem(x.dataset.edit)));
+  if (typeof todayStudyCard === 'function') todayStudyCard(el);
 }
 
 /* =========================================================
@@ -562,7 +577,7 @@ function fComplete() {
   const wasFocus = F.mode === 'focus';
   F.running = false; F.remaining = null; chime();
   if (wasFocus) {
-    S.focusLog.push({ date: todayStr(), minutes: S.settings.focusLen, taskId: F.taskId || null }); save();
+    S.focusLog.push({ date: todayStr(), minutes: S.settings.focusLen, taskId: F.taskId || null, subjectId: (F.taskId && getItem(F.taskId)?.subjectId) || null }); save();
     sendNotification('Focus session complete', `Lovely. Take a ${S.settings.breakLen}-minute break — stretch, sip some water.`, 'pebble-focus');
     toast('Session complete — break time');
     F.mode = 'break'; if (view === 'focus') renderFocus(); fStart();
@@ -713,13 +728,15 @@ function chime() {
    FLASHCARDS (simple spaced repetition)
    ========================================================= */
 const INTERVALS = [0, 1, 3, 7, 14, 30, 60];
-const CU = { deck: null, study: null };
+const CU = { deck: null, study: null, quiz: null, match: null };
 const getDeck = id => S.decks.find(d => d.id === id);
 const dueCards = d => d.cards.filter(c => c.due <= todayStr());
 
 function renderCards() {
   const el = $('#view-cards');
-  if (CU.study) return renderStudy(el);
+  if (CU.quiz) return renderQuiz(el);
+  if (CU.match) return renderMatch(el);
+  if (CU.study) return renderCardStudy(el);
   const deck = CU.deck && getDeck(CU.deck);
   if (!deck) {
     CU.deck = null;
@@ -748,6 +765,9 @@ function renderCards() {
       <p class="sub">${deck.cards.length} cards · ${due} due today</p></div>
       <div class="head-actions">
         ${deck.cards.length ? `<button class="btn ${due ? 'primary' : ''}" id="studyBtn">${due ? `Review ${due} card${due === 1 ? '' : 's'}` : 'Practise all anyway'}</button>` : ''}
+        ${deck.cards.length >= 2 ? '<button class="btn" id="quizBtn">Quiz me</button>' : ''}
+        ${deck.cards.length >= 3 ? '<button class="btn" id="matchBtn">Match game</button>' : ''}
+        <button class="btn ghost" id="importBtn">Import</button>
       </div>
     </header>
     <div class="grid" style="grid-template-columns:1fr">
@@ -768,6 +788,9 @@ function renderCards() {
     </div>`;
   $('#backDecks', el).onclick = e => { e.preventDefault(); CU.deck = null; render(); };
   const sb = $('#studyBtn', el); if (sb) sb.onclick = () => startStudy(deck, !due);
+  $('#quizBtn', el)?.addEventListener('click', () => startQuiz(deck));
+  $('#matchBtn', el)?.addEventListener('click', () => startMatch(deck));
+  $('#importBtn', el).onclick = () => openImport(deck);
   const form = $('#addCard', el);
   const addCard = () => {
     const f = new FormData(form), q = f.get('q').trim(), a = f.get('a').trim(); if (!q || !a) return;
@@ -783,11 +806,12 @@ function renderCards() {
   };
 }
 function startStudy(deck, all) {
+  CU.quiz = null; CU.match = null;
   const pool = (all ? deck.cards.slice() : dueCards(deck)).sort(() => Math.random() - 0.5);
   CU.study = { deckId: deck.id, queue: pool.map(c => c.id), i: 0, flipped: false, again: 0, good: 0 };
   render();
 }
-function renderStudy(el) {
+function renderCardStudy(el) {
   const st = CU.study, deck = getDeck(st.deckId);
   if (!deck) { CU.study = null; return renderCards(); }
   if (st.i >= st.queue.length) {
@@ -798,7 +822,7 @@ function renderStudy(el) {
     return;
   }
   const c = deck.cards.find(x => x.id === st.queue[st.i]);
-  if (!c) { st.i++; return renderStudy(el); }
+  if (!c) { st.i++; return renderCardStudy(el); }
   const next = g => { const b = g === 'good' ? Math.min(c.box + 1, INTERVALS.length - 1) : Math.min(c.box + 2, INTERVALS.length - 1); return INTERVALS[b]; };
   const dayLabel = n => n === 1 ? '1 day' : n + ' days';
   el.innerHTML = `<div class="study">
@@ -829,6 +853,7 @@ function gradeCard(g) {
   if (c) {
     if (g === 'again') { c.box = 0; c.due = todayStr(); st.queue.push(c.id); }
     else { c.box = Math.min(c.box + (g === 'easy' ? 2 : 1), INTERVALS.length - 1); c.due = ymd(addDays(new Date(), INTERVALS[c.box])); }
+    if (typeof logReview === 'function') logReview();
     save();
   }
   st.i++; st.flipped = false; render();
@@ -934,7 +959,7 @@ function renderSettings() {
           <label class="btn sm" style="cursor:pointer">Restore backup<input type="file" id="sImport" accept="application/json,.json" hidden></label>
           <button class="btn sm ghost danger" id="sReset">Clear everything</button>
         </div>
-        <p class="note">Shortcuts: <kbd>N</kbd> new item · <kbd>1</kbd>–<kbd>7</kbd> switch pages · <kbd>Esc</kbd> close</p>
+        <p class="note">Shortcuts: <kbd>N</kbd> new item · <kbd>1</kbd>–<kbd>9</kbd> switch pages · <kbd>Esc</kbd> close</p>
       </section>
     </div>`;
 
@@ -1144,6 +1169,7 @@ document.addEventListener('keydown', e => {
   const modalOpen = $('#modal').classList.contains('open');
   if (e.key === 'Escape') { if (modalOpen) closeModal(); else if (document.activeElement && typing) document.activeElement.blur(); return; }
   if (typing || modalOpen || e.ctrlKey || e.metaKey || e.altKey) return;
+  if (typeof learnKeys === 'function' && learnKeys(e)) return;
   if (view === 'cards' && CU.study) {
     if (e.key === ' ' || e.key === 'Enter') { e.preventDefault(); flipCard(); return; }
     if (CU.study.flipped && ['1', '2', '3'].includes(e.key)) { gradeCard({ 1: 'again', 2: 'good', 3: 'easy' }[e.key]); return; }
@@ -1151,7 +1177,7 @@ document.addEventListener('keydown', e => {
   if (view === 'focus' && e.key === ' ' && !e.target.closest('button')) { e.preventDefault(); F.running ? fPause() : fStart(); return; }
   if (view === 'calendar' && (e.key === 'ArrowLeft' || e.key === 'ArrowRight') && !e.target.closest('.cal-cell')) { shiftMonth(e.key === 'ArrowLeft' ? -1 : 1); return; }
   if (e.key === 'n' || e.key === 'N') { e.preventDefault(); $('#fab').click(); return; }
-  if (/^[1-7]$/.test(e.key)) go(VIEWS[+e.key - 1]);
+  if (/^[1-9]$/.test(e.key)) go(VIEWS[+e.key - 1]);
 });
 
 // heartbeat: timer, day rollover, reminders
